@@ -164,3 +164,4 @@ run_finish:
 	movq	$format_invalid, %rdi
 	movq	$0, %rax
 	call	printf
+	jmp	run_finish	#Going back to the finish part
