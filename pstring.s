@@ -35,13 +35,13 @@ lowerOrUpper:
 	cmpb	$97, %dil
 	jle	isSmall
 	jmp	isFalse
-	.isFalse: 	#The character isn't a lower or upper case
+	.isFalse: 		#The character isn't a lower or upper case
 	movq	%dil, %rax
 	ret
-	.isBig:		#Upper case to lower case
+	.isBig:			#Upper case to lower case
 	movb	32(%dil), %rax
 	ret
-	.isSmall:	#Lower case to upper case
+	.isSmall:		#Lower case to upper case
 	movb	-32(%dil), %rax
 	ret
 
@@ -63,7 +63,7 @@ swapCase:
 
 	.type	pstrijcpy, @function
 pstrijcpy:
-	call	pstrlen	#Start of index out of bound check
+	call	pstrlen		#Start of index out of bound check
 	cmpb	%rax, %rcx	#End index is bigger than the dest
 	jl	error_end
 	cmpb	%rdx, $0	#Start index is smaller than 0
@@ -100,18 +100,45 @@ pstrijcpy:
 	
 	.type	pstrijcmp, @function
 pstrijcmp:
-	call	pstrlen	#Start of index out of bound check
-	cmpb	%rax, %rcx	#End index is bigger than the dest
+	call	pstrlen		#Start of index out of bound check
+	cmpb	%rax, %rcx	#End index is bigger than the p1
 	jl	error_end
 	cmpb	%rdx, $0	#Start index is smaller than 0
 	jl	error_end
 	pushq	%rdi
 	movq	%rsi, %rdi
 	call	pstrlen
-	cmpb	%rax, %rcx	#End index is bigger than source
+	cmpb	%rax, %rcx	#End index is bigger than p2
 	jl	error_end
 	popq	%rdi		#End of index out of bound check
-	
+	leaq	(%rdi, %rdx, 8), %rdi	#Start of copy p1
+	leaq	(%rsi, %rdx, 8), %rsi	#Start of copy p2
+	leaq	(%rdi, %rcx, 8), %r8	#End of copy p1
+	leaq	(%rsi, %rcx, 8), %r9	#End of copy p2
+	jmp	loop
+	.finishp1:		#first string is bigger
+	movq	$1, %rax
+	ret
+	.finishp2:		#second string is bigger
+	movq	$-1, %rax
+	ret
+	.finish_eq:
+	movq	$0, %rax
+	ret
+	.loop:
+	cmpb	(%dil), (%sil)	#Checking if p1 is bigger
+	jg	finishp1
+	cmpb	(%dil), (%sil)	#Checking if p2 is bigger
+	jl	finishp2
+	cmpb	(%dil), (%r8d)	#Checking if we reached the final index
+	je	finish_eq
+	cmpb	(%dil), $format_end	#Checking if reached the end
+	je	finish_eq
+	cmpb	(%sil), $format_end	#Checking if we reached the end
+	je	finish_eq
+	leaq	1(%rdi), %rdi	#Moving forward
+	leaq	1(%rsi), %rsi
+	jmp	loop
 	.error_end:
 	movq	$format_invalid, %rdi
 	movq	$0, %rax
