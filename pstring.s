@@ -1,28 +1,28 @@
 	.section	.rodata
 .align 8
 format_invalid:	.string	"invalid input!\n"
-format_end:		.string	"\0"
+format_d:	.string	"%d"
+format_end:	.string	"\0"
 	.text	#Start of code
 .global pstrlen, replaceChar, swapCase, pstrijcpy, pstrijcmp
 	.type	pstrlen, @function
 pstrlen:
-	movb	%dil, %al
+	movzbq	0(%rdi), %rax
 	ret
 
 	.type	replaceChar, @function
 replaceChar:
-	movq	%rdi, %rcx
+	movq	%rdi, %rax
 	jmp	.loop
 	.cloop2:			#If we got to the char we want to replace
-	movb	%dl, %cl	#Maybe we need to add () on cl
+	movb	%dl, (%rdi)	#Maybe we need to add () on cl
 	.cloop1:
-	cmpb	%sil, %cl	#Checks if we're pointing to the old char
+	cmpb	0(%rdi), %sil	#Checks if we're pointing to the old char
 	je	.cloop2
-	leaq	1(%rcx), %rcx
 	.loop:
-	cmpb	$0, %cl	#CHECK MAYBE ()
+	addq	$1, %rdi
+	cmpb	$0, (%rdi)
 	jne	.cloop1
-	movq	%rdi, %rax
 	ret
 
 	.type	lowerOrUpper, @function
@@ -66,19 +66,20 @@ swapCase:
 	je	.end
 	jmp	.loopBody
 
+
 	.type	pstrijcpy, @function
 pstrijcpy:
 	call	pstrlen		#Start of index out of bound check
-	cmpq	%rax, %rcx	#End index is bigger than the dest
-	jl	.error_end
+	cmpq	%rax, %rcx	#End index is bigger than the string length
+	#jl	.error_end	
 	movq	$0, %r8
 	cmpq	%rdx, %r8	#Start index is smaller than 0
-	jl	.error_end
+	#jl	.error_end
 	pushq	%rdi
 	movq	%rsi, %rdi
 	call	pstrlen
-	cmpq	%rax, %rcx	#End index is bigger than source
-	jl	.error_end
+	cmpq	%rax, %rcx	#End index is bigger than source length
+	#jl	.error_end
 	popq	%rdi		#End of index out of bound check
 	movq	%rdi, %r11	#Backing up dest string pointer
 	leaq	(%rdi, %rdx, 8), %rdi	#Start of copy dest
@@ -88,15 +89,15 @@ pstrijcpy:
 	jmp	.loop2
 	.loop_body:
 	movb	%sil, %dil
-	leaq	1(%rdi), %rdi
-	leaq	1(%rsi), %rsi
+	addq	$1, %rdi
+	addq	$1, %rsi
 	.loop2:
-	cmpb	%dil, %r8b
+	cmpb	%dil, %r8b	#Checking if we reached the end of the string
 	je	.end_succ
 	jmp	.loop_body
 	.end_succ:
 	movb	%sil, %dil
-	movq	%r11, %rax
+	movq	%r11, %rax	#Returning a pointer to the string
 	ret
 	.error_end:
 	movq	$format_invalid, %rdi

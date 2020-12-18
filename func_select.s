@@ -14,13 +14,13 @@
  .quad .L4 #Case 60
 
 format_length:		.string		"first pstring length: %d, second pstring length: %d\n"
-format_replace:		.string		"old char: %c. new char: %c, first string: %s, second string %s\n"
+format_replace:		.string		"old char: %c. new char: %c, first string: %s, second string: %s\n"
 format_copy:		.string		"length: %d, string %s\n"
 format_swap:		.string		"length: %d, string %s\n"
 format_compare:		.string		"compare result: %d\n"
 format_invalid:		.string		"invalid option!\n"
-format_c:		.string		"%c"
-format_d:		.string		"%d"
+format_c:		.string		" %c %c"
+format_d:		.string		" %d"
 
 	.text #The actual code
 .global run_func
@@ -36,7 +36,7 @@ run_func:
 	cmpq	$10,%rcx	#Compare xi:10
 	ja	.L9		#if >, go to default case
 	jmp	*.L10(,%rcx,8)	#Goto jt[xi]
-run_finish:
+.run_finish:
 	popq	%r13
 	popq	%r12
 	movq	%rbp, %rsp
@@ -45,78 +45,85 @@ run_finish:
 
 .L4:	#case 50
 	movq	%r12, %rdi
-	call 	pstrlen		# Calling the length function
-	movq	%rax, %rsi
+	call 	pstrlen		#Calling the length function for the first string
+		
 	movq	%r13, %rdi
-	pushq	%rsi
-	call 	pstrlen
+	pushq	%rax		#Saving the result of the first string
+	call 	pstrlen		#Calling the length function for the second string
+
+	movq	%rax, %rdx	#Moving the result of the second string length to the correct register
 	movq 	$format_length, %rdi
-	movq	%rax, %rdx
 	movq	$0, %rax
-	popq	%rsi
+	popq	%rsi		#Getting the result back
 	call	printf
-	jmp	run_finish
+	jmp	.run_finish	#Going to the end
+
 .L5:	#case 52
 	movq	$format_c, %rdi
-	subq	$8, %rsp
-	movq	%rsp, %rsi
+	subq	$16, %rsp	#Preparing the stack for 2 chars
+	leaq	(%rsp), %rsi
+	leaq	1(%rsp), %rdx
 	movq	$0, %rax
-	call	scanf
-	leaq	1(%rsp), %rsi
-	movq	$format_c, %rdi
-	movq	$0, %rax
-	call	scanf
+	call	scanf		#Getting 2 chars from the user
+
 	movb	(%rsp), %sil	#Old char
 	movb	1(%rsp), %dl	#new char
 	movq	%r12, %rdi	#First pstring
 	call	replaceChar
-	pushq	%rax		#The first replaced string
+
 	movb	(%rsp), %sil	#Old char
-	movb	1(%rsp), %dl
-	movq	%r13, %rdi
+	movb	1(%rsp), %dl	#New char
+	movq	%r13, %rdi	#Second string
 	call	replaceChar
+
 	movq	$format_replace, %rdi
 	movb	(%rsp), %sil
 	movb	1(%rsp), %dl
-	popq	%rcx		#The first string - changed
+	movq	%r12, %rcx	#The first string - changed
 	movq	%rax, %r8	#The second string - changed
 	movq	$0, %rax
 	call	printf
-	addq	$8, %rsp	#Returning rsp back to normal
-	jmp	run_finish
+	addq	$16, %rsp	#Returning rsp back to normal
+	jmp	.run_finish
+
 .L6:	#case 53
 	movq	$format_d, %rdi	#Setting up for scanf
-	subq	$8, %rsp
-	movq	%rsp, %rsi
+	subq	$16, %rsp
+	leaq	(%rsp), %rsi
 	movq	$0, %rax
-	call	scanf
-	leaq	1(%rsp), %rsi	#Saving the first number in rsp
+	call	scanf		#Getting the first index from the user
+
 	movq	$format_d, %rdi
+	leaq	1(%rsp), %rsi
 	movq	$0, %rax
-	call	scanf
-	movq	%r13, %rdi	#Getting the dest string from backup
-	movq	%r12, %rsi	#Getting the source string from backup
+	call	scanf		#Getting the second index
+
+	movq	%r12, %rdi	#Getting the dest string from backup
+	movq	%r13, %rsi	#Getting the source string from backup
 	movb	(%rsp), %dl	#start index
 	movb	1(%rsp), %cl	#finish index
 	call	pstrijcpy
+
 	movq	%rax, %rdi	#getting the length of the dest string
 	pushq	%rdi		#Saving the string as it is caller save
 	call	pstrlen
-	popq	%rdi
-	movq	%rdi, %rdx
+
+	popq	%rdx
 	movq	$format_copy, %rdi
 	movq	%rax, %rsi
 	movq	$0, %rax
-	call	printf
-	movq	%r12, %rdi	#Getting the length of the source string
+	call	printf		#Printing the first (changed) string
+
+	movq	%r13, %rdi	#Getting the length of the source string
 	call	pstrlen
+
 	movq	$format_copy, %rdi
 	movq	%rax, %rsi
-	movq	%r12, %rdx	#Getting the first string back from the backup
+	movq	%r13, %rdx	#Getting the first string back from the backup
 	movq	$0, %rax
 	call	printf
-	addq	$8, %rsp	#Stack back to normal
-	jmp	run_finish	#Returning to the end
+	addq	$16, %rsp	#Stack back to normal
+	jmp	.run_finish	#Returning to the end
 .L7:	#case 54
 	movq	%r12, %rdi	#First string
 	call	swapCase
@@ -138,9 +145,9 @@ run_finish:
 	popq	%rdx
 	movq	$0, %rax
 	call	printf
-	jmp	run_finish
+	jmp	.run_finish
 .L8:	#case 55
-	subq	$8, %rsp
+	subq	$16, %rsp
 	movq	%rsp, %rsi
 	movq	$format_d, %rdi
 	movq	$0, %rax
@@ -158,10 +165,10 @@ run_finish:
 	movq	%rax, %rsi
 	movq	$0, %rax
 	call	printf
-	addq	$8, %rsp	#Setting the stack back to normal
-	jmp	run_finish	#Going back to the finish sequence
+	addq	$16, %rsp	#Setting the stack back to normal
+	jmp	.run_finish	#Going back to the finish sequence
 .L9:	#default case
 	movq	$format_invalid, %rdi
 	movq	$0, %rax
 	call	printf
-	jmp	run_finish	#Going back to the finish part
+	jmp	.run_finish	#Going back to the finish part
