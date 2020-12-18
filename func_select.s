@@ -1,6 +1,6 @@
 	.section	.rodata
  .align 8
-.L10
+.L10:
  .quad .L4 #Case 50
  .quad .L9 #Case 51
  .quad .L5 #Case 52
@@ -71,13 +71,13 @@ run_finish:
 	movq	%r12, %rdi	#First pstring
 	call	replaceChar
 	pushq	%rax		#The first replaced string
-	movq	(%rsp), %sil	#Old char
-	movq	1(%rsp), %dl
+	movb	(%rsp), %sil	#Old char
+	movb	1(%rsp), %dl
 	movq	%r13, %rdi
 	call	replaceChar
 	movq	$format_replace, %rdi
-	movq	(%rsp), %sil
-	movq	1(%rsp), %dl
+	movb	(%rsp), %sil
+	movb	1(%rsp), %dl
 	popq	%rcx		#The first string - changed
 	movq	%rax, %r8	#The second string - changed
 	movq	$0, %rax
@@ -151,8 +151,8 @@ run_finish:
 	call	scanf		#Getting the second index
 	movq	%r12, %rdi	#First string
 	movq	%r13, %rsi	#Second string
-	movb	(%rsp), %rdx	#start index
-	movb	1(%rsp), %rcx	#finish index
+	movq	(%rsp), %rdx	#start index
+	movq	1(%rsp), %rcx	#finish index
 	call	pstrijcmp
 	movq	$format_compare, %rdi
 	movq	%rax, %rsi
