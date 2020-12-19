@@ -1,6 +1,6 @@
 	.section	.rodata
 format_s:	.string		" %s"
-format_d:	.string		" %d"
+format_d:	.string		" %hhu"
 
 	.text	#Start of the code
 .global	run_main
