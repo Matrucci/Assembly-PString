@@ -28,26 +28,28 @@ replaceChar:
 	.type	lowerOrUpper, @function
 lowerOrUpper:
 	movq	$64, %r8
-	cmpq	%rdi, %r8
-	jle	.isFalse		#Going to lable false
-	movq	$128, %r8
-	cmpq	%r8, %rdi
-	jle	.isFalse
+	cmpb	0(%rdi), %r8b
+	jge	.isFalse		#Going to lable false
+	movq	$123, %r8
+	cmpb	%r8b, 0(%rdi)
+	jge	.isFalse
 	movq	$90, %r8
-	cmpq	%rdi, %r8
-	jle	.isBig
+	cmpb	0(%rdi), %r8b
+	jge	.isUpper
 	movq	$97, %r8
-	cmpq	%r8, %rdi
-	jle	.isSmall
+	cmpb	%r8b, 0(%rdi)
+	jge	.isLower
 	jmp	.isFalse
-	.isFalse: 		#The character isn't a lower or upper case
-	movq	%rdi, %rax
+	.isFalse: 		#The character isn't a letter
+	movb	(%rdi), %al
 	ret
-	.isBig:			#Upper case to lower case
-	movq	32(%rdi), %rax
+	.isUpper:			#Upper case to lower case
+	movb	(%rdi), %al
+	addb	$32, %al
 	ret
-	.isSmall:		#Lower case to upper case
-	movq	-32(%rdi), %rax
+	.isLower:		#Lower case to upper case
+	movb	(%rdi), %al
+	subb	$32, %al
 	ret
 
 	.type	swapCase, @function
@@ -59,10 +61,10 @@ swapCase:
 	ret
 	.loopBody:
 	call	lowerOrUpper
-	movq	%rax, %rdi
-	leaq	1(%rdi), %rdi
+	movb	%al, (%rdi)
+	addq	$1, %rdi
 	.loop1:
-	cmpb	$0, %dil
+	cmpb	$0, (%rdi)
 	je	.end
 	jmp	.loopBody
 
@@ -71,32 +73,36 @@ swapCase:
 pstrijcpy:
 	call	pstrlen		#Start of index out of bound check
 	cmpq	%rax, %rcx	#End index is bigger than the string length
-	#jl	.error_end	
+	jge	.error_end	
 	movq	$0, %r8
 	cmpq	%rdx, %r8	#Start index is smaller than 0
-	#jl	.error_end
-	pushq	%rdi
+	jg	.error_end
+	movq	%rdi, %r11
 	movq	%rsi, %rdi
 	call	pstrlen
 	cmpq	%rax, %rcx	#End index is bigger than source length
-	#jl	.error_end
-	popq	%rdi		#End of index out of bound check
-	movq	%rdi, %r11	#Backing up dest string pointer
-	leaq	(%rdi, %rdx, 8), %rdi	#Start of copy dest
-	leaq	(%rsi, %rdx, 8), %rsi	#Start of copy source
-	leaq	(%rdi, %rcx, 8), %r8	#End of copy dest
-	leaq	(%rsi, %rcx, 8), %r9	#End of copy source
+	jge	.error_end
+	movq	%r11, %rdi		#End of index out of bound check
+
+	movq	%rdi, %r11	#Backing up dest string pointer	
+	inc	%rdi		#We don't count the length as an index
+	inc	%rsi		#We don't count the length as an index
+	leaq	(%rdi, %rcx), %r8	#End of copy dest
+	leaq	(%rdi, %rdx), %rdi	#Start of copy dest
+	leaq	(%rsi, %rdx), %rsi	#Start of copy source
 	jmp	.loop2
 	.loop_body:
-	movb	%sil, %dil
-	addq	$1, %rdi
-	addq	$1, %rsi
+	movzbq	(%rsi), %rax
+	movb	%al, (%rdi)
+	leaq	1(%rdi), %rdi
+	leaq	1(%rsi), %rsi
 	.loop2:
-	cmpb	%dil, %r8b	#Checking if we reached the end of the string
+	cmpq	%rdi, %r8	#Checking if we reached the end of the string
 	je	.end_succ
 	jmp	.loop_body
 	.end_succ:
-	movb	%sil, %dil
+	movzbq	(%rsi), %rax
+	movb	%al, (%rdi)
 	movq	%r11, %rax	#Returning a pointer to the string
 	ret
 	.error_end:
@@ -109,46 +115,55 @@ pstrijcpy:
 pstrijcmp:
 	call	pstrlen		#Start of index out of bound check
 	cmpq	%rax, %rcx	#End index is bigger than the p1
-	jl	.error_end1
+	jge	.error_end1
 	movq	$0, %r8
 	cmpq	%rdx, %r8	#Start index is smaller than 0
-	jl	.error_end1
-	pushq	%rdi
+	jg	.error_end1
+	movq	%rdi, %r9
 	movq	%rsi, %rdi
 	call	pstrlen
 	cmpq	%rax, %rcx	#End index is bigger than p2
-	jl	.error_end1
-	popq	%rdi		#End of index out of bound check
-	leaq	(%rdi, %rdx, 8), %rdi	#Start of copy p1
-	leaq	(%rsi, %rdx, 8), %rsi	#Start of copy p2
-	leaq	(%rdi, %rcx, 8), %r8	#End of copy p1
-	leaq	(%rsi, %rcx, 8), %r9	#End of copy p2
+	jge	.error_end1
+	movq	%r9, %rdi		#End of index out of bound check
+
+	inc	%rdi
+	inc	%rsi
+	leaq	(%rdi, %rcx), %r8	#End of copy p1
+	leaq	(%rsi, %rcx), %r9
+	leaq	(%rdi, %rdx), %rdi	#Start of copy p1
+	leaq	(%rsi, %rdx), %rsi	#Start of copy p2
 	jmp	.loop3
+
 	.finishp1:		#first string is bigger
 	movq	$1, %rax
 	ret
+
 	.finishp2:		#second string is bigger
 	movq	$-1, %rax
 	ret
+
 	.finish_eq:
 	movq	$0, %rax
 	ret
+
 	.loop3:
-	cmpb	%dil, %sil	#Checking if p1 is bigger
-	jg	.finishp1
-	cmpb	%dil, %sil	#Checking if p2 is bigger
-	jl	.finishp2
+	movzbq	(%rsi), %rax
+	cmpb	%al, (%rdi)	#Checking if p1 is bigger
+	jl	.finishp1
+	cmpb	%al, (%rdi)	#Checking if p2 is bigger
+	jg	.finishp2
 	cmpq	%rdi, %r8	#Checking if we reached the final index
 	je	.finish_eq
-	movq	$format_end, %r11
-	cmpq	%rdi, %r11	#Checking if reached the end
+	movq	$0, %r11
+	cmpb	0(%rdi), %r11b	#Checking if reached the end
 	je	.finish_eq
-	movq	$format_end, %r11
-	cmpq	%rsi, %r11	#Checking if we reached the end
+	movq	$0, %r11
+	cmpb	0(%rsi), %r11b	#Checking if we reached the end
 	je	.finish_eq
 	leaq	1(%rdi), %rdi	#Moving forward
 	leaq	1(%rsi), %rsi
 	jmp	.loop3
+
 	.error_end1:
 	movq	$format_invalid, %rdi
 	movq	$0, %rax
