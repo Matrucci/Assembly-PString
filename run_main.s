@@ -10,10 +10,11 @@ run_main:
 	pushq	%r12		#Backing up callee save
 	pushq	%r13		#Backing up callee save
 	pushq	%r14		#Backing up callee save
+	pushq	%rbp		#Backing up stake
 	movq	%rsp, %rbp	#Saving stack state
 
 	movq	$format_d, %rdi
-	subq	$544, %rsp	
+	subq	$552, %rsp	
 	leaq	(%rsp), %rsi
 	movq	$0, %rax
 	call	scanf		#Getting the first string length
@@ -68,8 +69,8 @@ run_main:
 	call	run_func
 
 	movq	%rbp, %rsp
+	popq	%rbp
 	popq	%r14
 	popq	%r13
 	popq	%r12
-	movq	%rsp, %rbp
 	ret

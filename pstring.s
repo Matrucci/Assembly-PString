@@ -135,11 +135,11 @@ pstrijcmp:
 	jmp	.loop3
 
 	.finishp1:		#first string is bigger
-	movq	$1, %rax
+	movq	$-1, %rax
 	ret
 
 	.finishp2:		#second string is bigger
-	movq	$-1, %rax
+	movq	$1, %rax
 	ret
 
 	.finish_eq:

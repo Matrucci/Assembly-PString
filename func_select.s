@@ -14,9 +14,9 @@
  .quad .L4 #Case 60
 
 format_length:		.string		"first pstring length: %d, second pstring length: %d\n"
-format_replace:		.string		"old char: %c. new char: %c, first string: %s, second string: %s\n"
-format_copy:		.string		"length: %d, string %s\n"
-format_swap:		.string		"length: %d, string %s\n"
+format_replace:		.string		"old char: %c, new char: %c, first string: %s, second string: %s\n"
+format_copy:		.string		"length: %d, string: %s\n"
+format_swap:		.string		"length: %d, string: %s\n"
 format_compare:		.string		"compare result: %d\n"
 format_invalid:		.string		"invalid option!\n"
 format_c:		.string		" %c %c"
@@ -70,17 +70,21 @@ run_func:
 	movb	1(%rsp), %dl	#new char
 	movq	%r12, %rdi	#First pstring
 	call	replaceChar
-
+	movq	%rax, %r12
+	inc	%r12
+	
 	movb	(%rsp), %sil	#Old char
 	movb	1(%rsp), %dl	#New char
 	movq	%r13, %rdi	#Second string
 	call	replaceChar
+	movq	%rax, %r13
+	inc	%r13
 
 	movq	$format_replace, %rdi
 	movb	(%rsp), %sil
 	movb	1(%rsp), %dl
 	movq	%r12, %rcx	#The first string - changed
-	movq	%rax, %r8	#The second string - changed
+	movq	%r13, %r8	#The second string - changed
 	movq	$0, %rax
 	call	printf
 	addq	$16, %rsp	#Returning rsp back to normal
@@ -103,16 +107,14 @@ run_func:
 	movb	(%rsp), %dl	#start index
 	movb	1(%rsp), %cl	#finish index
 	call	pstrijcpy
-
+	
 	movq	%r12, %rdi	#getting the length of the dest string
-	#pushq	%rdi		#Saving the string as it is caller save
 	call	pstrlen
 
-	#popq	%rdx
+	inc	%r12
 	movq	%rax, %rsi
-	movq	%rdi, %rdx
+	movq	%r12, %rdx
 	movq	$format_copy, %rdi
-	#movq	%rax, %rsi
 	movq	$0, %rax
 	call	printf		#Printing the first (changed) string
 
@@ -121,6 +123,7 @@ run_func:
 
 	movq	$format_copy, %rdi
 	movq	%rax, %rsi
+	inc	%r13
 	movq	%r13, %rdx	#Getting the first string back from the backup
 	movq	$0, %rax
 	call	printf
@@ -130,20 +133,24 @@ run_func:
 .L7:	#case 54
 	movq	%r12, %rdi	#First string
 	call	swapCase
+	movq	%rax, %r12
 	movq	%rax, %rdi	#Getting the length
 	call	pstrlen
 	movq	$format_swap, %rdi
 	movq	%rax, %rsi
+	inc	%r12
 	movq	%r12, %rdx
 	movq	$0, %rax
 	call	printf		#Printed first swapped string
 
 	movq	%r13, %rdi
 	call	swapCase	#Swapping for the second string
+	movq	%rax, %r13
 	movq	%rax, %rdi
 	call	pstrlen
 	movq	%rax, %rsi
 	movq	$format_swap, %rdi
+	inc	%r13
 	movq	%r13, %rdx
 	movq	$0, %rax
 	call	printf
