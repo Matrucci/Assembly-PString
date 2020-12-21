@@ -71,7 +71,7 @@ swapCase:
 
 	.type	pstrijcpy, @function
 pstrijcpy:
-	call	pstrlen		#Start of index out of bound check
+	movzbq	0(%rdi), %rax		#Start of index out of bound check
 	cmpq	%rax, %rcx	#End index is bigger than the string length
 	jge	.error_end	
 	movq	$0, %r8
@@ -79,7 +79,7 @@ pstrijcpy:
 	jg	.error_end
 	movq	%rdi, %r11
 	movq	%rsi, %rdi
-	call	pstrlen
+	movzbq	0(%rdi), %rax
 	cmpq	%rax, %rcx	#End index is bigger than source length
 	jge	.error_end
 	movq	%r11, %rdi		#End of index out of bound check
@@ -113,7 +113,7 @@ pstrijcpy:
 	
 	.type	pstrijcmp, @function
 pstrijcmp:
-	call	pstrlen		#Start of index out of bound check
+	movzbq	0(%rdi), %rax		#Start of index out of bound check
 	cmpq	%rax, %rcx	#End index is bigger than the p1
 	jge	.error_end1
 	movq	$0, %r8
@@ -121,7 +121,7 @@ pstrijcmp:
 	jg	.error_end1
 	movq	%rdi, %r9
 	movq	%rsi, %rdi
-	call	pstrlen
+	movzbq	0(%rdi), %rax
 	cmpq	%rax, %rcx	#End index is bigger than p2
 	jge	.error_end1
 	movq	%r9, %rdi		#End of index out of bound check

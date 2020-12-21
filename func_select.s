@@ -104,8 +104,8 @@ run_func:
 
 	movq	%r12, %rdi	#Getting the dest string from backup
 	movq	%r13, %rsi	#Getting the source string from backup
-	movb	(%rsp), %dl	#start index
-	movb	1(%rsp), %cl	#finish index
+	movzbq	(%rsp), %rdx	#start index
+	movzbq	1(%rsp), %rcx	#finish index
 	call	pstrijcpy
 	
 	movq	%r12, %rdi	#getting the length of the dest string
@@ -170,8 +170,8 @@ run_func:
 
 	movq	%r12, %rdi	#First string
 	movq	%r13, %rsi	#Second string
-	movb	(%rsp), %dl	#start index
-	movb	1(%rsp), %cl	#finish index
+	movzbq	(%rsp), %rdx	#start index
+	movzbq	1(%rsp), %rcx	#finish index
 	call	pstrijcmp
 
 	movq	$format_compare, %rdi
