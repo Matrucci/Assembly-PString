@@ -1,4 +1,3 @@
-#318570769	Matan Saloniko
 	.section	.rodata
 .align 8
 format_invalid:	.string		"invalid input!\n"
