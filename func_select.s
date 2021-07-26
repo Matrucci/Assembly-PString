@@ -1,4 +1,3 @@
-#318570769	Matan Saloniko
 	.section	.rodata
  .align 8
 .L10:
