@@ -1,4 +1,3 @@
-#318570769	Matan Saloniko
 	.section	.rodata
 format_s:	.string		" %s"
 format_d:	.string		" %hhu"
